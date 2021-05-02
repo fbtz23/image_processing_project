@@ -81,11 +81,13 @@ void menu( int choice, Bitmap^& obraz, std::string nazwa_obrazu )
 }
 void open( Bitmap^& obraz, int length, int dgr, std::string nazwa_obrazu )
 {
-  dgr = dgr % 360;
+  dgr = dgr % 180;
   double radian = dgr * double( M_PI ) / 180;
-  int ptk_1 = (cos( radian ) * length);
-  int ptk_2 = (sin( radian ) * length);
-
+  double ptk_1 = (cos( radian ) * length);
+  double ptk_2 = (sin( radian ) * length);
+  ptk_1 = round( ptk_1 );
+  ptk_2 = round( ptk_2 );
+  cout << dgr << " " << radian << " " << "ptk_1 " << ptk_1 << "ptk 2 " << ptk_2 << endl;
   int SE_width = static_cast< int >( ptk_1 ); 
   int SE_height = static_cast< int >( ptk_2 );
   if ( SE_width % 2 == 0 ) ++SE_width;
@@ -110,32 +112,6 @@ void open( Bitmap^& obraz, int length, int dgr, std::string nazwa_obrazu )
   int y1 = ( SE_width - 1 );
   BresenhamLine( x0, y0, x1, y1, vect );
 
-  //vect[ x0 ][ y0 ] = 1;
-  //vect[ x1 ][ y1 ] = 1;
-
-
-  //int dx = abs( x1 - x0 );
-  //int sx = x0 < x1 ? 1 : -1;
-  //int dy = -abs( y1 - y0 );
-  //int sy = y0 < y1 ? 1 : -1;
-  //int err = dx + dy;
-  //while ( true ) {
-
-  //  if ( x0 >= x1 && y0 >= y1 ) break;
-  //  vect[ x0 ][ y0 ] = 1;
-
-  //  int e2 = 2 * err;
-  //  if ( e2 >= dy ) {
-  //    err += dy;
-  //    x0 += sx;
-  //  }
-  //  if ( e2 <= dx ) {
-
-  //    err += dx;
-  //    y0 += sy;
-  //  }
-
-  //}
   cout << " \n\n LINIA \n\n";
   for ( int i = 0; i < SE_height; i++ )
   {
@@ -156,31 +132,7 @@ void open( Bitmap^& obraz, int length, int dgr, std::string nazwa_obrazu )
   dilation(output, eroded, vect, SE_height, SE_width );
   output->Save( "open.png" );
 }
-//void CenterLine( vector<punkt>& SE )
-//{
-//  int srodek = SE.size() / 2;
-//  cout << srodek << " " << SE.size() << endl;
-//  vector<punkt> temp = SE;
-//  temp[ srodek ] = { 0,0 };
-//  for ( int i = srodek; i > 0; i-- )
-//  {
-//    punkt dyst;
-//    dyst.x = SE[ i - 1 ].x;
-//    dyst.y = SE[ i - 1 ].y;
-//    temp[ i - 1 ].x = SE[ i - 1 ].x - SE[ srodek ].x;
-//    temp[ i - 1 ].y = SE[ i - 1 ].y - SE[ srodek ].y;
-//  }
-//  for ( int i = srodek; i < SE.size()-1; i++ )
-//  {
-//    punkt dyst;
-//    dyst.x = SE[ i + 1 ].x;
-//    dyst.y = SE[ i + 1 ].y;
-//    temp[ i + 1 ].x = SE[ i + 1 ].x - SE[ srodek ].x;
-//    temp[ i + 1 ].y = SE[ i + 1 ].y - SE[ srodek ].y;
-//  }
-//
-//  SE = temp;
-//}
+
 void erosion(Bitmap^& output, Bitmap^& obraz, vector< vector<bool> >& SE, int SE_height, int SE_width )
 {
   int wys = obraz->Height;
