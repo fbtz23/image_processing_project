@@ -90,8 +90,7 @@ void open( Bitmap^& obraz, int length, int dgr, std::string nazwa_obrazu )
   int SE_height = static_cast< int >( ptk_2 );
   if ( SE_width % 2 == 0 ) ++SE_width;
   if ( SE_height % 2 == 0 ) ++SE_height;
-  int centralPointX = ( SE_width - 1 ) / 2;
-  int centralPointY = ( SE_height - 1 ) / 2;
+
   vector<vector<bool>> vect;
   vect.resize( SE_height );
   for ( int i = 0; i < SE_height; ++i )
@@ -186,26 +185,28 @@ void erosion(Bitmap^& output, Bitmap^& obraz, vector< vector<bool> >& SE, int SE
 {
   int wys = obraz->Height;
   int szer = obraz->Width;
+  int centralPointX = ( SE_width - 1 ) / 2;
+  int centralPointY = ( SE_height - 1 ) / 2;
   for ( int i = 0; i < szer; i++ )
   {
     for ( int j = 0; j < wys; j++ )
     {
-      Color Px = obraz->GetPixel( j, i );
+      Color Px = obraz->GetPixel( i, j );
       int min{ Px.R };
-      for ( int kx=0; kx<SE_height; kx++  )
+      for ( int kx= -centralPointY; kx<= centralPointY; kx++  )
       {
-        for ( int kz = 0; kz < SE_width; kz++ )
+        for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
         {
-          if(SE[kx][kz])
-            if ( ( j + kz >= 0 && j +kz < szer ) && ( i + kx >= 0 && i + kx < wys ) )
+          if(SE[kx+ centralPointY][kz + centralPointX])
+            if ( ( j + kx >= 0 && j +kx < wys ) && ( i + kz >= 0 && i + kz < szer ) )
             {
-              Color Px = obraz->GetPixel( j + kz, i + kx );
+              Color Px = obraz->GetPixel( i + kz, j + kx );
               if ( Px.R < min )
                 min = Px.R;
             }
         }
       }
-      output->SetPixel( j, i, Color::FromArgb( min, min, min ) );
+      output->SetPixel( i, j, Color::FromArgb( min, min, min ) );
     }
   }
 }
@@ -213,26 +214,28 @@ void dilation( Bitmap^& output, Bitmap^& obraz, vector< vector<bool> >& SE, int 
 {
   int wys = obraz->Height;
   int szer = obraz->Width;
+  int centralPointX = ( SE_width - 1 ) / 2;
+  int centralPointY = ( SE_height - 1 ) / 2;
   for ( int i = 0; i < szer; i++ )
   {
     for ( int j = 0; j < wys; j++ )
     {
-      Color Px = obraz->GetPixel( j, i );
+      Color Px = obraz->GetPixel( i, j );
       int max{ Px.R };
-      for ( int kx = 0; kx < SE_height; kx++ )
+      for ( int kx = -centralPointY; kx <= centralPointY; kx++ )
       {
-        for ( int kz = 0; kz < SE_width; kz++ )
+        for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
         {
-          if ( SE[ kx ][ kz ] )
-            if ( ( j + kx >= 0 && j + kx < szer ) && ( i + kz >= 0 && i + kz < wys ) )
+          if ( SE[ kx + centralPointY ][ kz + centralPointX ] )
+            if ( ( j + kx >= 0 && j + kx < wys ) && ( i + kz >= 0 && i + kz < szer ) )
             {
-              Color Px = obraz->GetPixel( j + kx, i + kz );
+              Color Px = obraz->GetPixel( i + kz, j + kx );
               if ( Px.R > max )
                 max = Px.R;
             }
         }
       }
-      output->SetPixel( j, i, Color::FromArgb( max, max, max ) );
+      output->SetPixel( i, j, Color::FromArgb( max, max, max ) );
     }
   }
 }
