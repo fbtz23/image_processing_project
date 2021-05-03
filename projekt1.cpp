@@ -5,7 +5,7 @@
 #include <stack>
 #include <math.h>
 #include <vector>
-
+#include <algorithm>    // std::sort
 struct punkt
 {
   int x;
@@ -20,9 +20,8 @@ void histogramRGB( Bitmap^ obraz, double odch, std::string nazwa_obrazu );
 void histogramMono( Bitmap^ obraz, double odch, std::string nazwa_obrazu );
 
 //ordfilt
-void ordFilt2RGB( Bitmap^ obraz, double mask, double num_porz, std::string nazwa_obrazu );
-void ordFilt2Mono( Bitmap^ obraz, double mask, double num_porz, std::string nazwa_obrazu );
-
+void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string nazwa_obrazu );
+bool checkIfMono( Bitmap^ obraz );
 //otwarcie elementem linjnym
 void open( Bitmap^& obraz, int length, int dgr, std::string nazwa_obrazu );
 //wypelnianie dziur
@@ -45,7 +44,7 @@ int main()
     obraz = gcnew Bitmap( newSystemString, true );
 
     int choice;
-    cout << "Co wykonac, 1) Wypelnianie dziur \n2)Otwarcie elementem linijnym" << endl;
+    cout << "Co wykonac, 1) Wypelnianie dziur \n2)Otwarcie elementem linijnym\n3)Ordfilt2" << endl;
     cin >> choice;
     menu( choice, obraz, nazwa_obrazu );
 }
@@ -72,7 +71,17 @@ void menu( int choice, Bitmap^& obraz, std::string nazwa_obrazu )
       break;
 
     case 3:   
-      cout << "Ordfilt2";
+      cout << "Ordfilt2" << endl;
+      cout << "podaj rozmiar maski, x" << endl;
+      int mask_x;
+      cin >> mask_x;
+      cout << "podaj rozmiar maski, y" << endl;
+      int mask_y;
+      cin >> mask_y;
+      cout << "podaj numer porzadkowy, <=x*y" << endl;
+      int num_porz;
+      cin >> num_porz;
+      ordFilt2( obraz, mask_x, mask_y, num_porz, nazwa_obrazu );
       break;
 
     default:  
@@ -276,12 +285,81 @@ void histogramRGB( Bitmap^ obraz, double odch, std::string nazwa_obrazu ) {
 void histogramMono( Bitmap^ obraz, double odch, std::string nazwa_obrazu )
 {
 }
-void ordFilt2RGB( Bitmap^ obraz, double mask, double num_porz, std::string nazwa_obrazu )
+void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string nazwa_obrazu )
 {
+  checkIfMono( obraz ) ? cout << "monochrom\n" : cout << "rgb\n";
+  vector<vector<bool>> vect;
+  vect.resize( maskY );
+  for ( int i = 0; i < maskY; ++i )
+    vect[ i ].resize( maskX );
+  for ( int i = 0; i < maskY; i++ )
+  {
+    for ( int j = 0; j < maskX; j++ )
+    {
+      cout << vect[ i ][ j ] << "\t";
+
+    }
+    cout << "\n";
+  }
+  Bitmap^ output = gcnew Bitmap( obraz->Width, obraz->Height );
+  int centralPointX = ( maskX - 1 ) / 2;
+  int centralPointY = ( maskY - 1 ) / 2;
+  if ( checkIfMono )
+  {
+    int wys = obraz->Height;
+    int szer = obraz->Width;
+    for ( int i = 0; i < szer; i++ )
+    {
+      for ( int j = 0; j < wys; j++ )
+      {
+        Color Px = obraz->GetPixel( i, j );
+        int res = 0;
+        vector<int> wyniki;
+        for ( int kx = -centralPointY; kx <= centralPointY; kx++ )
+        {
+          for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
+          {
+              if ( ( j + kx >= 0 && j + kx < wys ) && ( i + kz >= 0 && i + kz < szer ) )
+              {
+                Color Px = obraz->GetPixel( i + kz, j + kx );
+                wyniki.push_back( Px.R );
+              }
+          }
+        }
+        std::sort( wyniki.begin(), wyniki.end() );
+        //if(i==0)
+        //for ( std::vector<int>::iterator it = wyniki.begin(); it != wyniki.end(); ++it )
+        //  std::cout << ' ' << *it;
+        if(wyniki.size() == num_porz )
+          output->SetPixel( i, j, Color::FromArgb( wyniki[num_porz-1], wyniki[ num_porz - 1 ], wyniki[ num_porz - 1 ] ) );
+        else
+        {
+          int pom_num = num_porz - wyniki.size();
+          output->SetPixel( i, j, Color::FromArgb( wyniki[ num_porz - 1 - pom_num ], wyniki[ num_porz - 1 - pom_num ], wyniki[ num_porz - 1 - pom_num ] ) );
+        }
+
+      }
+    }
+  }
+  output->Save( "ordfilt2.png" );
 }
-void ordFilt2Mono( Bitmap^ obraz, double mask, double num_porz, std::string nazwa_obrazu )
+bool checkIfMono( Bitmap^ obraz )
 {
+  bool mono = true;
+  int wys = obraz->Height;
+  int szer = obraz->Width;
+  for ( int i = 0; i < szer && mono; i++ )
+  {
+    for ( int j = 0; j < wys && mono; j++ )
+    {
+      Color Px = obraz->GetPixel( i, j );
+      if ( !( Px.R == Px.G && Px.R == Px.B && Px.G == Px.B ) )
+        mono = false;
+    }
+  }
+  return mono;
 }
+
 void holeFillLogic( Bitmap^ obraz, std::string nazwa_obrazu )
 {
   Bitmap^ inverse;
