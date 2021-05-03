@@ -341,6 +341,50 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
       }
     }
   }
+  else
+  {
+    int wys = obraz->Height;
+    int szer = obraz->Width;
+    for ( int i = 0; i < szer; i++ )
+    {
+      for ( int j = 0; j < wys; j++ )
+      {
+        Color Px = obraz->GetPixel( i, j );
+        int res = 0;
+        vector<int> wynikiR;
+        vector<int> wynikiG;
+        vector<int> wynikiB;
+        for ( int kx = -centralPointY; kx <= centralPointY; kx++ )
+        {
+          for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
+          {
+            if ( ( j + kx >= 0 && j + kx < wys ) && ( i + kz >= 0 && i + kz < szer ) )
+            {
+              Color Px = obraz->GetPixel( i + kz, j + kx );
+              wynikiR.push_back( Px.R );
+              wynikiG.push_back( Px.G );
+              wynikiB.push_back( Px.B );
+
+            }
+          }
+        }
+        std::sort( wynikiR.begin(), wynikiR.end() );
+        std::sort( wynikiG.begin(), wynikiG.end() );
+        std::sort( wynikiB.begin(), wynikiB.end() );
+        //if(i==0)
+        //for ( std::vector<int>::iterator it = wyniki.begin(); it != wyniki.end(); ++it )
+        //  std::cout << ' ' << *it;
+        if ( wynikiR.size() == num_porz )
+          output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 ], wynikiG[ num_porz - 1 ], wynikiB[ num_porz - 1 ] ) );
+        else
+        {
+          int pom_num = num_porz - wynikiR.size();
+          output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 - pom_num ], wynikiG[ num_porz - 1 - pom_num ], wynikiB[ num_porz - 1 - pom_num ] ) );
+        }
+
+      }
+    }
+  }
   output->Save( "ordfilt2.png" );
 }
 bool checkIfMono( Bitmap^ obraz )
