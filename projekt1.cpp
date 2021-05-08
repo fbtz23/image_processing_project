@@ -16,8 +16,7 @@ using namespace std;
 using namespace System;
 using namespace System::Drawing;
 //wyrownanie histogramu
-void histogramRGB( Bitmap^ obraz, double odch, std::string nazwa_obrazu );
-void histogramMono( Bitmap^ obraz, double odch, std::string nazwa_obrazu );
+void histogram( Bitmap^ obraz, double odch, std::string nazwa_obrazu );
 
 //ordfilt
 void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string nazwa_obrazu );
@@ -44,7 +43,7 @@ int main()
     obraz = gcnew Bitmap( newSystemString, true );
 
     int choice;
-    cout << "Co wykonac, 1) Wypelnianie dziur \n2)Otwarcie elementem linijnym\n3)Ordfilt2" << endl;
+    cout << "Co wykonac, 1) Wypelnianie dziur \n2)Otwarcie elementem linijnym\n3)Ordfilt2\n4)Wyrownanie histogramu" << endl;
     cin >> choice;
     menu( choice, obraz, nazwa_obrazu );
 }
@@ -83,7 +82,13 @@ void menu( int choice, Bitmap^& obraz, std::string nazwa_obrazu )
       cin >> num_porz;
       ordFilt2( obraz, mask_x, mask_y, num_porz, nazwa_obrazu );
       break;
-
+    case 4:
+      cout << "Wyrownanie histogramu" << endl;
+      cout << "podaj odchylenie" << endl;
+      double std;
+      cin >> std;
+      histogram( obraz, std, nazwa_obrazu );
+      break;
     default:  
       cout << "Zla opcja";
     }
@@ -279,11 +284,166 @@ void BresenhamLine( const int x1, const int y1, const int x2, const int y2, vect
     }
   }
 }
-void histogramRGB( Bitmap^ obraz, double odch, std::string nazwa_obrazu ) {
-
-}
-void histogramMono( Bitmap^ obraz, double odch, std::string nazwa_obrazu )
+void histogram( Bitmap^ obraz, double odch, std::string nazwa_obrazu )
 {
+  checkIfMono( obraz ) ? cout << "monochrom\n" : cout << "rgb\n";
+
+  Bitmap^ output = gcnew Bitmap( obraz->Width, obraz->Height );
+  Color Px;
+  int N = 256;
+  int wys, szer;
+  int kz, kx;
+  wys = obraz->Height;
+  szer = obraz->Width;
+
+  int** gray = new int* [ wys ];
+  std::vector<int> histGr( N );
+
+  int** blue = new int* [ wys ];
+  int** green = new int* [ wys ];
+  int** red = new int* [ wys ];
+
+  std::vector<int> histB(N);
+  std::vector<int> histG( N );
+  std::vector<int> histR( N );
+
+  std::vector<double> dyst(N);
+  std::vector<int> LUT(N);
+
+  std::vector<int> LUT_R( N );
+  std::vector<int> LUT_G( N );
+  std::vector<int> LUT_B( N );
+
+  if ( !checkIfMono )
+  {
+    Color Px;
+
+    for ( kz = 0; kz < wys; kz++ )
+    {
+      blue[ kz ] = new int[ szer ];
+      green[ kz ] = new int[ szer ];
+      red[ kz ] = new int[ szer ];
+      for ( kx = 0; kx < szer; kx++ )
+      {
+        Px = obraz->GetPixel( kx, kz );
+        //r
+        red[ kz ][ kx ] = Px.R;
+        histR[ red[ kz ][ kx ] ]++;
+        //g
+        green[ kz ][ kx ] = Px.G;
+        histG[ green[ kz ][ kx ] ]++;
+        //b
+        blue[ kz ][ kx ] = Px.B;
+        histB[ blue[ kz ][ kx ] ]++;
+      }
+    }
+    for ( int i = 1; i < N; ++i )
+    {
+      histR[ i ] += histR[ i - 1 ];
+      histG[ i ] += histG[ i - 1 ];
+      histB[ i ] += histB[ i - 1 ];
+    }
+    int srednia = 127;
+    for ( int i = 0; i < N; i++ )
+      dyst[i]= exp( -1 * pow( i - srednia, 2 ) / ( 2. * pow( odch, 2 ) ) ) / ( odch * sqrt( 2. * M_PI ) );
+
+    for ( int i = 1; i < N; i++ )
+      dyst[ i ] += dyst[ i - 1 ];
+    
+    double multiplier = 1 / dyst[ 255 ];
+
+    for ( int i = 0; i < 256; i++ ) {
+      dyst[ i ] = dyst[ i ] * multiplier * wys * szer;
+    }
+    for ( int k = 0; k < 256; k++ ) {
+      for ( int j = 0; j < 256; j++ ) {
+        if ( histR[ k ] > dyst[ j ] ) {
+          continue;
+        }
+        LUT_R[ k ] = j;
+        break;
+      }
+    }
+    for ( int k = 0; k < 256; k++ ) {
+      for ( int j = 0; j < 256; j++ ) {
+        if ( histG[ k ] > dyst[ j ] ) {
+          continue;
+        }
+        LUT_G[ k ] = j;
+        break;
+      }
+    }
+    for ( int k = 0; k < 256; k++ ) {
+      for ( int j = 0; j < 256; j++ ) {
+        if ( histB[ k ] > dyst[ j ] ) {
+          continue;
+        }
+        LUT_B[ k ] = j;
+        break;
+      }
+    }
+    for ( kz = 0;kz< wys; kz++ ) {
+      for ( kx = 0; kx < szer; kx++ ) {
+        red[ kz][ kx ] = LUT_R[ red[ kz ][ kx ] ];
+        green[ kz ][ kx ] = LUT_G[ green[ kz ][ kx ] ];
+        blue[ kz ][ kx ] = LUT_B[ blue[ kz ][ kx ] ];
+        Px = Color::FromArgb( red[ kz ][ kx ], green[ kz ][ kx ], blue[ kz ][ kx ] );
+        output->SetPixel( kx, kz, Px );
+      }
+    }
+  }
+  else
+  {
+    Color Px;
+    for ( kz = 0; kz < 256; kz++ )
+      histGr[ kz ] = 0;
+
+    for ( kz = 0; kz < wys; kz++ )
+    {
+      gray[ kz ] = new int[ szer ];
+      for ( kx = 0; kx < szer; kx++ )
+      {
+        Px = obraz->GetPixel( kx, kz );
+        gray[ kz ][ kx ] = Px.R;
+        histGr[ gray[ kz ][ kx ] ]++;
+      }
+    }
+    for ( int i = 1; i < N; ++i )
+      histGr[ i ] += histGr[ i - 1 ];
+
+    int srednia = 127;
+    for ( int i = 0; i < N; i++ )
+      dyst[ i ] = exp( -1 * pow( i - srednia, 2 ) / ( 2. * pow( odch, 2 ) ) ) / ( odch * sqrt( 2. * M_PI ) );
+
+    for ( int i = 1; i < N; i++ )
+      dyst[ i ] += dyst[ i - 1 ];
+
+    double multiplier = 1 / dyst[ 255 ];
+
+    for ( int i = 0; i < 256; i++ ) {
+      dyst[ i ] = dyst[ i ] * multiplier * wys * szer;
+    }
+    for ( int k = 0; k < 256; k++ ) {
+      for ( int j = 0; j < 256; j++ ) {
+        if ( histGr[ k ] > dyst[ j ] ) {
+          continue;
+        }
+        LUT[ k ] = j;
+        break;
+      }
+    }
+    for ( kz = 0; kz < wys; kz++ ) {
+      for ( kx = 0; kx < szer; kx++ ) {
+        gray[ kz ][ kx ] = LUT[ gray[ kz ][ kx ] ];
+        Px = Color::FromArgb( gray[ kz ][ kx ], gray[ kz ][ kx ], gray[ kz ][ kx ] );
+        output->SetPixel( kx, kz, Px );
+      }
+    }
+  }
+  output->Save( "histogram.png" );
+  for ( int i = 0; i < wys; ++i )
+    delete[] gray[ i ];
+  delete gray;
 }
 void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string nazwa_obrazu )
 {
@@ -327,9 +487,6 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
           }
         }
         std::sort( wyniki.begin(), wyniki.end() );
-        //if(i==0)
-        //for ( std::vector<int>::iterator it = wyniki.begin(); it != wyniki.end(); ++it )
-        //  std::cout << ' ' << *it;
         if(wyniki.size() == num_porz )
           output->SetPixel( i, j, Color::FromArgb( wyniki[num_porz-1], wyniki[ num_porz - 1 ], wyniki[ num_porz - 1 ] ) );
         else
@@ -371,9 +528,6 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
         std::sort( wynikiR.begin(), wynikiR.end() );
         std::sort( wynikiG.begin(), wynikiG.end() );
         std::sort( wynikiB.begin(), wynikiB.end() );
-        //if(i==0)
-        //for ( std::vector<int>::iterator it = wyniki.begin(); it != wyniki.end(); ++it )
-        //  std::cout << ' ' << *it;
         if ( wynikiR.size() == num_porz )
           output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 ], wynikiG[ num_porz - 1 ], wynikiB[ num_porz - 1 ] ) );
         else
