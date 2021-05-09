@@ -472,10 +472,7 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
     {
       for ( int j = 0; j < wys; j++ )
       {
-        Color Px = obraz->GetPixel( i, j );
-        int res = 0;
         vector<int> wyniki;
-        int num = 0;
         for ( int kx = -centralPointY; kx <= centralPointY; kx++ )
         {
           for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
@@ -484,16 +481,15 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
               {
                 Color Px = obraz->GetPixel( i + kz, j + kx );
                 wyniki.push_back( Px.R );
-                num++;
               }
           }
         }
-        if(wyniki.size() == num_porz )
+        sort( wyniki.begin(), wyniki.end() );
+        if( wyniki.size() >= num_porz )
           output->SetPixel( i, j, Color::FromArgb( wyniki[num_porz-1], wyniki[ num_porz - 1 ], wyniki[ num_porz - 1 ] ) );
         else
         {
-          int which = wyniki.size() - 1 < num_porz ? wyniki.size() - 1 : num_porz;
-          output->SetPixel( i, j, Color::FromArgb( wyniki[ which ], wyniki[ which ], wyniki[ which] ) );
+          output->SetPixel( i, j, Color::FromArgb( wyniki[ wyniki.size() -1 ], wyniki[ wyniki.size() -1 ], wyniki[ wyniki.size() -1] ) );
         }
 
       }
@@ -507,8 +503,6 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
     {
       for ( int j = 0; j < wys; j++ )
       {
-        Color Px = obraz->GetPixel( i, j );
-        int res = 0;
         vector<int> wynikiR;
         vector<int> wynikiG;
         vector<int> wynikiB;
@@ -522,19 +516,17 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
               wynikiR.push_back( Px.R );
               wynikiG.push_back( Px.G );
               wynikiB.push_back( Px.B );
-
             }
           }
         }
         std::sort( wynikiR.begin(), wynikiR.end() );
         std::sort( wynikiG.begin(), wynikiG.end() );
         std::sort( wynikiB.begin(), wynikiB.end() );
-        if ( wynikiR.size() == num_porz )
+        if ( wynikiR.size() >= num_porz )
           output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 ], wynikiG[ num_porz - 1 ], wynikiB[ num_porz - 1 ] ) );
         else
         {
-          int which = wynikiR.size() - 1 < num_porz ? wynikiR.size() - 1 : num_porz;
-          output->SetPixel( i, j, Color::FromArgb( wynikiR[ which-1 ], wynikiG[ which-1 ], wynikiB[ which-1 ] ) );
+          output->SetPixel( i, j, Color::FromArgb( wynikiR[ wynikiR.size() -1 ], wynikiG[ wynikiG.size() -1 ], wynikiB[ wynikiB.size() -1 ] ) );
         }
 
       }
