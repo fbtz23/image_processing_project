@@ -475,6 +475,7 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
         Color Px = obraz->GetPixel( i, j );
         int res = 0;
         vector<int> wyniki;
+        int num = 0;
         for ( int kx = -centralPointY; kx <= centralPointY; kx++ )
         {
           for ( int kz = -centralPointX; kz <= centralPointX; kz++ )
@@ -483,16 +484,16 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
               {
                 Color Px = obraz->GetPixel( i + kz, j + kx );
                 wyniki.push_back( Px.R );
+                num++;
               }
           }
         }
-        std::sort( wyniki.begin(), wyniki.end() );
         if(wyniki.size() == num_porz )
           output->SetPixel( i, j, Color::FromArgb( wyniki[num_porz-1], wyniki[ num_porz - 1 ], wyniki[ num_porz - 1 ] ) );
         else
         {
-          int pom_num = num_porz - wyniki.size();
-          output->SetPixel( i, j, Color::FromArgb( wyniki[ num_porz - 1 - pom_num ], wyniki[ num_porz - 1 - pom_num ], wyniki[ num_porz - 1 - pom_num ] ) );
+          int which = wyniki.size() - 1 < num_porz ? wyniki.size() - 1 : num_porz;
+          output->SetPixel( i, j, Color::FromArgb( wyniki[ which ], wyniki[ which ], wyniki[ which] ) );
         }
 
       }
@@ -532,8 +533,8 @@ void ordFilt2( Bitmap^& obraz, int maskX, int maskY, int num_porz, std::string n
           output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 ], wynikiG[ num_porz - 1 ], wynikiB[ num_porz - 1 ] ) );
         else
         {
-          int pom_num = num_porz - wynikiR.size();
-          output->SetPixel( i, j, Color::FromArgb( wynikiR[ num_porz - 1 - pom_num ], wynikiG[ num_porz - 1 - pom_num ], wynikiB[ num_porz - 1 - pom_num ] ) );
+          int which = wynikiR.size() - 1 < num_porz ? wynikiR.size() - 1 : num_porz;
+          output->SetPixel( i, j, Color::FromArgb( wynikiR[ which-1 ], wynikiG[ which-1 ], wynikiB[ which-1 ] ) );
         }
 
       }
